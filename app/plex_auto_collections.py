@@ -6,6 +6,7 @@ try:
     import threading
     import glob
     import datetime
+    import requests
     from plexapi.server import PlexServer
     from plexapi.video import Movie
     from plexapi.video import Show
@@ -1007,6 +1008,8 @@ print("| Locating config...")
 config_path = None
 app_dir = os.path.dirname(os.path.abspath(__file__))
 
+
+
 if args.config_path and os.path.exists(args.config_path):
     config_path = os.path.abspath(args.config_path)    # Set config_path from command line switch
 elif args.config_path and not os.path.exists(args.config_path):
@@ -1016,7 +1019,16 @@ elif os.path.exists(os.path.join(app_dir, "config.yml")):
 elif os.path.exists(os.path.join(app_dir, "..", "config", "config.yml")):
     config_path = os.path.abspath(os.path.join(app_dir, "..", "config", "config.yml"))    # Set config_path from config_dir
 else:
-    sys.exit("| Config Error: No config found, exiting")
+    config_download_path = os.path.join(app_dir, "..", "config", "downloaded-config.yml")
+    url = os.environ['CONFIG_URL']
+    if url:
+        print("Attempting to download config from url loaded from environment var CONFIG_URL: {}".format(url))
+        r = requests.get(url, allow_redirects=True)
+        open(config_download_path, 'wb').write(r.content)
+    if os.path.exists(config_download_path):
+        config_path = config_download_path    # Set config_path from config_dir
+    else:
+        sys.exit("| Config Error: No config found, exiting")
 
 print("| Using {} as config".format(config_path))
 
